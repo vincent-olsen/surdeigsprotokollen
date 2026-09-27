@@ -2,7 +2,7 @@
 // site at https://<user>.github.io/<repo>/. Zero dependencies.
 import { createReadStream, existsSync, statSync } from 'node:fs';
 import { createServer } from 'node:http';
-import { extname, join, normalize, resolve } from 'node:path';
+import { extname, join, normalize, resolve, sep } from 'node:path';
 import { parseArgs } from 'node:util';
 
 const { values } = parseArgs({
@@ -32,7 +32,13 @@ if (!existsSync(join(root, 'index.html'))) {
 }
 
 createServer((req, res) => {
-  const path = decodeURIComponent(new URL(req.url ?? '/', 'http://x').pathname);
+  let path;
+  try {
+    path = decodeURIComponent(new URL(req.url ?? '/', 'http://x').pathname);
+  } catch {
+    res.writeHead(400).end('Bad request');
+    return;
+  }
   if (path === base.slice(0, -1)) {
     res.writeHead(301, { Location: base }).end();
     return;
@@ -42,7 +48,8 @@ createServer((req, res) => {
     return;
   }
   let file = normalize(join(root, path.slice(base.length)));
-  if (!file.startsWith(root)) {
+  // Compare with the separator: a bare prefix check lets ..%2f reach a sibling like dist-foo/.
+  if (file !== root && !file.startsWith(root + sep)) {
     res.writeHead(403).end();
     return;
   }
@@ -53,6 +60,6 @@ createServer((req, res) => {
   }
   res.writeHead(200, { 'Content-Type': types[extname(file)] ?? 'application/octet-stream' });
   createReadStream(file).pipe(res);
-}).listen(Number(values.port), () => {
+}).listen(Number(values.port), '127.0.0.1' /* loopback only, never the LAN */, () => {
   console.log(`Serving ${root} at http://localhost:${values.port}${base}`);
 });

@@ -10,3 +10,11 @@ playwright/.cache/
 .vscode/*
 !.vscode/extensions.json
 .idea/
+
+# Local secrets and machine-specific settings never belong in a public repo.
+# Vite also exposes VITE_* variables from .env files to the client bundle.
+.env
+.env.*
+!.env.example
+*.local
+.claude/settings.local.json
