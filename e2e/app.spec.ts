@@ -29,6 +29,34 @@ test('loads under the GitHub Pages sub-path with no broken assets', async ({ pag
   expect(problems).toEqual([]);
 });
 
+test('the Content-Security-Policy is enforced and nothing violates it', async ({ page }) => {
+  await page.addInitScript(() => {
+    const seen: string[] = [];
+    (window as unknown as { cspViolations: string[] }).cspViolations = seen;
+    document.addEventListener('securitypolicyviolation', (e) => seen.push(`${e.effectiveDirective} ${e.blockedURI}`));
+  });
+  await page.goto('./');
+  await expect(page.locator('meta[http-equiv="Content-Security-Policy"]')).toHaveAttribute('content', /default-src 'none'/);
+
+  // Exercise every render path under the policy, not just the first paint.
+  await page.locator('#presets button[data-p="grov"]').click();
+  await page.locator('#ratioSel').selectOption('1:3:3');
+  await page.locator('#wakeTime').fill('07:00');
+  await expect(page.locator('#chkCool')).toHaveClass(/warn/);
+  expect(await page.evaluate(() => (window as unknown as { cspViolations: string[] }).cspViolations)).toEqual([]);
+
+  // Trusted Types is on: a raw innerHTML write must throw, not render.
+  const sink = await page.evaluate(() => {
+    try {
+      document.body.innerHTML = '<b>x</b>';
+      return 'allowed';
+    } catch (e) {
+      return (e as Error).name;
+    }
+  });
+  expect(sink).toBe('TypeError');
+});
+
 test('one loaf, 500 g, 72 %: the sums reconcile', async ({ page }) => {
   await page.goto('./');
   await page.locator('#loaves button[data-v="1"]').click();

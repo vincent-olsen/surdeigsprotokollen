@@ -5,6 +5,10 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    # Hijacked npm releases are usually caught and pulled within days; let a
+    # release age a week before proposing it. Security updates skip the wait.
+    cooldown:
+      default-days: 7
     groups:
       dev-dependencies:
         dependency-type: development
