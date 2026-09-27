@@ -1,0 +1,523 @@
+<!doctype html>
+<html lang="nb">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#E8E6E2" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#161513" media="(prefers-color-scheme: dark)" />
+    <meta name="description" content="Kalkulator og tidsplan for surdeigsbrød — bakerprosent, melblanding, levainbygg og en tidsplan fra torsdag kveld til lørdag morgen." />
+    <title>Surdeigsprotokollen</title>
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" />
+    <script type="module" src="/src/main.ts"></script>
+  </head>
+  <body>
+    <div class="wrap">
+
+      <header class="masthead">
+        <div class="eyebrow">Bakeprotokoll · Surdeig · Torsdag → lørdag</div>
+        <h1>Surdeigsprotokollen</h1>
+        <p class="deck">Hele løpet fra starteren kommer ut av kjøleskapet torsdag kveld til brødet skjæres lørdag. Med kalkulator for mengder og melblanding — og <strong>den ene regelen</strong> som gjorde krummen din fuktig: skjær aldri varmt.</p>
+        <nav class="toc">
+          <a href="#oppskrift">Oppskrift</a>
+          <a href="#tidsplan">Tidsplan</a>
+          <a href="#protokoll">Temperaturer</a>
+          <a href="#diagnose">Diagnosen</a>
+          <a href="#kurve">98 °C-fellen</a>
+          <a href="#bakesvinn">Bakesvinn</a>
+          <a href="#krumme">Les krummen</a>
+          <a href="#regler">Reglene</a>
+        </nav>
+      </header>
+
+      <!-- ============ OPPSKRIFT ============ -->
+      <section id="oppskrift">
+        <div class="sec-head">
+          <div class="sec-num">01</div>
+          <h2>Oppskriften</h2>
+        </div>
+
+        <div class="prose">
+          <p>Alt regnes i bakerprosent: melet er 100 %, resten måles mot det. Sett antall brød og gram mel per brød — deigvekten følger av hydreringen. Endrer du melblandingen, endres også anbefalt hydrering, fordi sammalt mel suger mer vann og gir svakere glutennettverk.</p>
+        </div>
+
+        <div class="calc">
+
+          <div class="panel">
+            <div class="field">
+              <div class="field-label"><span>Antall brød</span></div>
+              <div class="seg" id="loaves" role="group" aria-label="Antall brød">
+                <button type="button" data-v="1">1</button>
+                <button type="button" data-v="2" aria-pressed="true">2</button>
+                <button type="button" data-v="3">3</button>
+                <button type="button" data-v="4">4</button>
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="field-label" for="flourPer"><span>Mel per brød</span><span class="field-val" id="flourPerOut">500 g</span></label>
+              <input type="number" id="flourPer" min="200" max="1200" step="25" value="500">
+              <div class="hint">500 g mel gir et brød på ~870 g deig. 400 g = lite, 600 g = stort.</div>
+            </div>
+
+            <div class="field">
+              <label class="field-label" for="hyd"><span>Hydrering</span><span class="field-val" id="hydOut">72 %</span></label>
+              <input type="range" id="hyd" min="60" max="88" step="1" value="72">
+              <div class="hint" id="hydHint">Anbefalt for denne blandingen: 72 %</div>
+            </div>
+
+            <div class="field">
+              <label class="field-label" for="lev"><span>Surdeig (levain)</span><span class="field-val" id="levOut">20 %</span></label>
+              <input type="range" id="lev" min="10" max="30" step="1" value="20">
+              <div class="hint">Mindre levain = lengre, kjøligere bulk og mildere syre. 20 % er standard.</div>
+            </div>
+
+            <div class="field">
+              <label class="field-label" for="salt"><span>Salt</span><span class="field-val" id="saltOut">2,0 %</span></label>
+              <input type="range" id="salt" min="1.6" max="2.6" step="0.1" value="2">
+              <div class="hint">Under 1,8 % gjærer merkbart raskere og gir slappere deig.</div>
+            </div>
+
+            <div class="field">
+              <div class="field-label"><span>Melblanding</span></div>
+              <div class="presets" id="presets">
+                <button type="button" data-p="lys">Lys</button>
+                <button type="button" data-p="halvgrov">Halvgrov</button>
+                <button type="button" data-p="grov">Grov</button>
+                <button type="button" data-p="rug">Med rug</button>
+                <button type="button" data-p="sterk">Sterk</button>
+              </div>
+              <div class="blend" id="blend"></div>
+              <div class="blend-sum" id="blendSum"><span>Sum</span><span class="v">100 %</span></div>
+              <div class="hint" id="blendHint"></div>
+            </div>
+          </div>
+
+          <div class="results">
+
+            <div class="kpis">
+              <div class="kpi"><div class="kpi-l">Deig totalt</div><div class="kpi-v" id="kTotal">1740 g</div></div>
+              <div class="kpi"><div class="kpi-l">Per brød</div><div class="kpi-v" id="kPer">870 g</div></div>
+              <div class="kpi"><div class="kpi-l">Ferdig brød</div><div class="kpi-v" id="kBaked">750 g</div></div>
+              <div class="kpi"><div class="kpi-l">Styrke</div><div class="kpi-v" id="kStr">0,96</div></div>
+            </div>
+
+            <div class="result-card">
+              <div class="result-head">
+                <span class="result-title">Levainbygg — <span id="levainRatio">1:6:6</span></span>
+                <span class="result-when">Torsdag kveld</span>
+              </div>
+              <div class="lines" id="levainLines"></div>
+            </div>
+
+            <p class="hint" id="levainSplitHint"></p>
+
+            <div class="result-card lead">
+              <div class="result-head">
+                <span class="result-title">Deigen — dette veier du opp</span>
+                <span class="result-when">Fredag formiddag</span>
+              </div>
+              <div class="lines" id="doughLines"></div>
+            </div>
+
+            <div class="result-card">
+              <div class="result-head">
+                <span class="result-title">Regnestykket bak</span>
+                <span class="result-when">Kontroll</span>
+              </div>
+              <div class="lines" id="formulaLines"></div>
+            </div>
+
+            <p class="hint" id="levainMathHint"></p>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ TIDSPLAN ============ -->
+      <section id="tidsplan">
+        <div class="sec-head">
+          <div class="sec-num">02</div>
+          <h2>Tidsplan</h2>
+        </div>
+
+        <div class="prose">
+          <p>Tre tidspunkter er dine. Resten følger av dem — og av at to ting i løpet er elastiske: <em class="term">hvor lenge levainen modner</em> (styres av matingsforholdet) og <em class="term">hvor lenge deigen står kaldt</em>. Flytter du et av tidspunktene, er det de to som gir etter.</p>
+        </div>
+
+        <div class="panel">
+          <div class="anchors">
+            <div class="field">
+              <label class="field-label" for="levTime"><span>Levainbygg torsdag</span></label>
+              <input type="time" id="levTime" value="22:00" step="900">
+              <div class="hint">Når du tar starteren ut av kjøleskapet.</div>
+            </div>
+            <div class="field">
+              <label class="field-label" for="wakeTime"><span>Vekkerklokke lørdag</span></label>
+              <input type="time" id="wakeTime" value="05:00" step="900">
+              <div class="hint">Ovnen på med én gang. 60 min forvarming.</div>
+            </div>
+            <div class="field">
+              <label class="field-label" for="cutTime"><span>Skjæres lørdag</span></label>
+              <input type="time" id="cutTime" value="10:30" step="900">
+              <div class="hint">Minst 3 timer etter at brødet er ute.</div>
+            </div>
+            <div class="field">
+              <label class="field-label" for="ratioSel"><span>Levain-forhold</span></label>
+              <select id="ratioSel"></select>
+              <div class="hint" id="ratioHint"></div>
+            </div>
+
+            <details class="info">
+              <summary>Om levain-forhold</summary>
+              <div class="info-body">
+                <p><strong>Forholdet er starter : mel : vann.</strong> 1:5:5 betyr 10 g starter, 50 g mel, 50 g vann. Det er den eneste knappen som styrer <em class="term">hvor lang tid</em> levainen bruker på å nå toppen — og samtidig <em class="term">hvor sur</em> den blir.</p>
+
+                <p><strong>Hvorfor tiden endrer seg.</strong> Forholdet bestemmer hvor mye ferskt mel hver mikrobe har å spise av, og hvor fortynnet populasjonen starter. 1:1:1 gir høy startpopulasjon og lite mat — de spiser opp på timer. 1:10:10 fortynner kraftig og gir mye mat, så det tar lang tid før de har formert seg nok til å toppe. Du styrer ikke hastigheten deres, men hvor langt de må gå.</p>
+
+                <p><strong>Hvorfor smaken endrer seg.</strong> Melkesyrebakteriene formerer seg saktere enn gjæren, men produserer syre hele veien. Lav fortynning betyr at du tar med mye akkumulert syre og tilsetter lite friskt mel — resultatet blir markert surt. Høy fortynning vasker ut syren og gir en mild, gjærdominert levain. Vil du ha mildt brød: bygg høyt. Vil du ha tydelig syre: bygg lavt.</p>
+
+                <div class="table-scroll">
+                  <table>
+                    <thead><tr><th>Forhold</th><th>Til topp</th><th>Karakter og bruk</th></tr></thead>
+                    <tbody id="ratioRows"></tbody>
+                  </table>
+                </div>
+
+                <p><strong>Temperatur slår alt.</strong> Tidene gjelder ved ~21 °C. Rundt 8 grader varmere halverer omtrent tiden, 8 grader kaldere dobler den. Står kjøkkenet på 18 °C om vinteren, legg på 30–40 % — eller velg ett trinn lavere forhold.</p>
+
+                <p><strong>Auto</strong> velger forholdet som gjør at levainen topper akkurat når deigen skal blandes, gitt når du bygger og når du står opp. Velger du selv, er det kaldhevingen som gir etter.</p>
+              </div>
+            </details>
+          </div>
+        </div>
+
+        <div class="checks">
+          <div class="check" id="chkLevain">
+            <div class="check-l">Levainen modner</div>
+            <div class="check-v" id="chkLevainV">12 t</div>
+            <div class="check-n" id="chkLevainN">Mat den 1:6:6</div>
+          </div>
+          <div class="check" id="chkRetard">
+            <div class="check-l">Kaldheving</div>
+            <div class="check-v" id="chkRetardV">13 t 58 min</div>
+            <div class="check-n" id="chkRetardN">Godt innenfor 10–18 t</div>
+          </div>
+          <div class="check" id="chkCool">
+            <div class="check-l">Avkjøling</div>
+            <div class="check-v" id="chkCoolV">3 t 40 min</div>
+            <div class="check-n" id="chkCoolN">Nok til at krummen setter seg</div>
+          </div>
+        </div>
+
+        <div class="sched" id="sched"></div>
+      </section>
+
+      <!-- ============ PROTOKOLL ============ -->
+      <section id="protokoll">
+        <div class="sec-head">
+          <div class="sec-num">03</div>
+          <h2>Temperaturene — og hvorfor</h2>
+        </div>
+
+        <div class="prose">
+          <p>Tidsplanen sier <em class="term">når</em>. Denne sier <em class="term">hvorfor</em> hver fase har den temperaturen den har. Bommer du på én av dem, er det her du finner ut hva som skjedde.</p>
+        </div>
+
+        <div class="protocol">
+
+          <div class="phase">
+            <div class="phase-rail"><div class="phase-step">1</div><div class="phase-dot" style="background: var(--t-temp)"></div><div class="phase-line"></div></div>
+            <div class="phase-body">
+              <div class="phase-top"><h3>Levainbygg</h3><span class="phase-temp" style="color: var(--t-temp)">20–22 °C</span></div>
+              <p class="phase-note">1:5:5 over natten treffer toppen etter 10–12 timer på et kjøkken på 21 °C. Er starteren treg rett fra kjøleskapet, gå til <strong>1:4:4</strong>. Bruk den på toppen — doblet, kuppelformet, syrlig-søt lukt — ikke etter at den har falt.</p>
+            </div>
+          </div>
+
+          <div class="phase">
+            <div class="phase-rail"><div class="phase-step">2</div><div class="phase-dot" style="background: var(--t-temp)"></div><div class="phase-line"></div></div>
+            <div class="phase-body">
+              <div class="phase-top"><h3>Miksing</h3><span class="phase-temp" style="color: var(--t-temp)">25–26 °C</span></div>
+              <p class="phase-note">Deigtemperatur målt <strong>rett etter siste miks</strong>. Dette er en bulk-parameter — den styrer gjæringshastigheten, ikke noe i ovnen. Vannet er spaken din, se formelen under.</p>
+            </div>
+          </div>
+
+          <div class="phase">
+            <div class="phase-rail"><div class="phase-step">3</div><div class="phase-dot" style="background: var(--t-temp)"></div><div class="phase-line"></div></div>
+            <div class="phase-body">
+              <div class="phase-top"><h3>Bulk</h3><span class="phase-temp" style="color: var(--t-temp)">24–26 °C</span></div>
+              <p class="phase-note">Styr etter deigen, ikke klokka. Et Oslo-kjøkken på 20–21 °C gir en deig som ligger <strong>30–40 % bak</strong> tidsplanen. Ferdig bulk = <strong>+50–75 % volum</strong>, kuppelformet overflate, bobler i kanten, deigen rister som gelé.</p>
+            </div>
+          </div>
+
+          <div class="phase">
+            <div class="phase-rail"><div class="phase-step">4</div><div class="phase-dot" style="background: var(--t-cold)"></div><div class="phase-line"></div></div>
+            <div class="phase-body">
+              <div class="phase-top"><h3>Kaldheving</h3><span class="phase-temp" style="color: var(--t-cold)">4 °C</span></div>
+              <p class="phase-note">Kulden frakobler smak fra volum: gjæraktiviteten faller mye kraftigere enn melkesyrebakterienes, så syren utvikler seg videre mens gassproduksjonen nesten stopper. 12–16 timer er vinduet — det er også bufferen din hvis fredagen skled.</p>
+            </div>
+          </div>
+
+          <div class="phase">
+            <div class="phase-rail"><div class="phase-step">5</div><div class="phase-dot" style="background: var(--t-max)"></div><div class="phase-line"></div></div>
+            <div class="phase-body">
+              <div class="phase-top"><h3>Ovn, lokk på</h3><span class="phase-temp" style="color: var(--t-max)">250 °C</span></div>
+              <p class="phase-note">25 min. <strong>Rett fra kjøleskapet</strong> — ikke temperer først. Kald deig gir lengre ovenspring-vindu, renere snitt, bedre formstabilitet, og null risiko for den ekstra timen med gjæring som tipper en ferdig hevet deig over.</p>
+            </div>
+          </div>
+
+          <div class="phase">
+            <div class="phase-rail"><div class="phase-step">6</div><div class="phase-dot" style="background: var(--t-warm)"></div><div class="phase-line"></div></div>
+            <div class="phase-body">
+              <div class="phase-top"><h3>Ovn, lokk av</h3><span class="phase-temp" style="color: var(--t-warm)">220–230 °C</span></div>
+              <p class="phase-note">Stek til 98 °C, så <strong>+10–15 min til</strong>. Er skorpen allerede mørk: ned til 200–210 °C og gi 15–20 min i stedet — lengre og kaldere gir tykkere skorpe uten bitterhet. Ovnsdør på gløtt siste 5–10 min.</p>
+            </div>
+          </div>
+
+          <div class="phase">
+            <div class="phase-rail"><div class="phase-step">7</div><div class="phase-dot" style="background: var(--t-cool)"></div></div>
+            <div class="phase-body">
+              <div class="phase-top"><h3>Avkjøling og skjæring</h3><span class="phase-temp" style="color: var(--t-cool)">3,5 t → under 25 °C</span></div>
+              <p class="phase-note">Ut av gryta straks, på <strong>rist</strong>, åpen luft, ikke tildekket. Her settes krummen. Skjærer du varmere enn 25 °C i midten, får du gummikrumme uansett hva du gjorde riktig i de seks stegene over.</p>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ============ DIAGNOSE ============ -->
+      <section id="diagnose">
+        <div class="sec-head">
+          <div class="sec-num">04</div>
+          <h2>Diagnosen fra forrige bak</h2>
+        </div>
+
+        <div class="findings">
+          <div class="finding finding--primary">
+            <div class="finding-rank">1</div>
+            <div class="finding-what">Skåret ved 35–40 °C</div>
+            <div class="finding-tag">Hovedårsak</div>
+            <div class="finding-why">Krummen setter seg under <em class="term">nedkjølingen</em>, ikke i ovnen. Ved 35–40 °C er stivelsesgelen fortsatt halvflytende, og vannet er ikke omfordelt. Du får gummiaktig krumme uansett hvor godt brødet er stekt.</div>
+          </div>
+
+          <div class="finding">
+            <div class="finding-rank">2</div>
+            <div class="finding-what">Ut ved første 98 °C-avlesning</div>
+            <div class="finding-tag">Medvirkende</div>
+            <div class="finding-why">Kjernetemperaturen låser seg på 96–99 °C lenge før krummen er ferdig, og blir stående der. Termometeret kan ikke skille mellom «5 minutter igjen» og «15 minutter igjen».</div>
+          </div>
+
+          <div class="finding">
+            <div class="finding-rank">3</div>
+            <div class="finding-what">1 time hvile, på benkeplate</div>
+            <div class="finding-tag">Medvirkende</div>
+            <div class="finding-why">Et brød på ~1 kg trenger 3–4 timer til romtemperatur. På tett underlag damper bunnen seg selv fuktig i tillegg.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ KURVE ============ -->
+      <section id="kurve">
+        <div class="sec-head">
+          <div class="sec-num">05</div>
+          <h2>Hvorfor 98 °C ikke betyr ferdig</h2>
+        </div>
+
+        <figure>
+          <div class="chart-frame">
+            <svg viewBox="0 0 560 270" role="img" aria-label="Graf over kjerne- og skorpetemperatur gjennom en steking. Kjernen flater ut på 98 grader etter 33 minutter, mens skorpen fortsetter å stige til over 190 grader.">
+              <rect x="336.8" y="36" width="116.6" height="160" fill="var(--hot)" opacity="0.09"></rect>
+
+              <line x1="62" y1="196" x2="520" y2="196" stroke="var(--line)" stroke-width="1"></line>
+              <line x1="62" y1="164" x2="520" y2="164" stroke="var(--line)" stroke-width="1" stroke-dasharray="2 4"></line>
+              <line x1="62" y1="100" x2="520" y2="100" stroke="var(--line)" stroke-width="1" stroke-dasharray="2 4"></line>
+              <line x1="62" y1="68"  x2="520" y2="68"  stroke="var(--line)" stroke-width="1" stroke-dasharray="2 4"></line>
+
+              <line x1="62" y1="132" x2="520" y2="132" stroke="var(--ink-3)" stroke-width="1.25" stroke-dasharray="5 4"></line>
+              <text x="66" y="125" font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--ink-3)">100 °C — vannets kokepunkt</text>
+
+              <text x="54" y="200" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--ink-3)">0</text>
+              <text x="54" y="168" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--ink-3)">50</text>
+              <text x="54" y="136" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--ink-3)">100</text>
+              <text x="54" y="104" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--ink-3)">150</text>
+              <text x="54" y="72"  text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--ink-3)">200</text>
+              <text x="54" y="46"  text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--ink-3)">°C</text>
+
+              <polyline fill="none" stroke="var(--t-max)" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"
+                points="62,192.8 87,163 112,141.6 137,134 162,132.6 216,132.3 270,132 300,122 328,109.6 361,99 395,90.4 428,83 462,77.6 520,69.3"></polyline>
+
+              <polyline fill="none" stroke="var(--t-cold)" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"
+                points="62,192.8 87,184 112,176.8 137,168 162,160.8 195,152 228,144.8 262,138 295,135.2 337,133.3 395,132.8 437,132.6 520,132.3"></polyline>
+
+              <line x1="336.8" y1="36" x2="336.8" y2="196" stroke="var(--ink-3)" stroke-width="1" stroke-dasharray="3 3"></line>
+              <circle cx="336.8" cy="133.3" r="3.5" fill="var(--t-cold)"></circle>
+              <text x="332" y="212" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--ink-3)">33 min</text>
+              <text x="332" y="226" text-anchor="middle" font-family="Familjen Grotesk, sans-serif" font-size="10.5" font-weight="600" fill="var(--ink-2)">98 °C nådd</text>
+              <text x="332" y="239" text-anchor="middle" font-family="Familjen Grotesk, sans-serif" font-size="10.5" fill="var(--ink-3)">du tok det ut her</text>
+
+              <line x1="453.4" y1="36" x2="453.4" y2="196" stroke="var(--hot)" stroke-width="1.25"></line>
+              <text x="458" y="212" font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--ink-3)">47 min</text>
+              <text x="458" y="226" font-family="Familjen Grotesk, sans-serif" font-size="10.5" font-weight="600" fill="var(--hot)">ferdig</text>
+
+              <text x="395" y="52" text-anchor="middle" font-family="Familjen Grotesk, sans-serif" font-size="11" font-weight="600" fill="var(--hot)">+10–15 min</text>
+              <text x="395" y="64" text-anchor="middle" font-family="Familjen Grotesk, sans-serif" font-size="10" fill="var(--ink-3)">vann ut, skorpe bygges</text>
+
+              <text x="270" y="212" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="var(--ink-3)">25 min</text>
+              <text x="270" y="226" text-anchor="middle" font-family="Familjen Grotesk, sans-serif" font-size="10.5" fill="var(--ink-3)">lokk av</text>
+              <line x1="270" y1="186" x2="270" y2="196" stroke="var(--ink-3)" stroke-width="1"></line>
+
+              <text x="516" y="62" text-anchor="end" font-family="Familjen Grotesk, sans-serif" font-size="11" font-weight="600" fill="var(--t-max)">skorpe</text>
+              <text x="516" y="148" text-anchor="end" font-family="Familjen Grotesk, sans-serif" font-size="11" font-weight="600" fill="var(--t-cold)">kjerne</text>
+            </svg>
+          </div>
+          <figcaption>Begge sonene låses på ~100 °C så lenge det finnes fritt vann. Skorpen tørker ut, bryter fri og stiger mot Maillard-området. Kjernen gjør det aldri — den blir stående til brødet er ute.</figcaption>
+        </figure>
+
+        <div class="prose">
+          <p><strong>Latent fordampningsvarme.</strong> Så lenge det finnes fritt vann i krummen går praktisk talt all tilført energi til å fordampe vann, ikke til å heve temperaturen. Kjernen parkerer på 96–99 °C og blir stående der. Ti minutter ekstra betyr <em class="term">mer vann ut</em> — ikke varmere kjerne. Derfor kan du ikke overkoke krummen slik du kan overkoke en biff.</p>
+          <p><strong>Skorpen er en egen sone.</strong> De ytterste 2–4 mm tørker ned under ~15 % fuktighet, og da er de ikke lenger låst til 100 °C. Først da kommer overflaten opp i 140–160 °C, som er der Maillard og karamellisering faktisk går. Det er derfor farge og skorpetykkelse fortsetter å utvikle seg mens kjernen står stille.</p>
+          <p>Grensen din er altså ikke krummen. Den er skorpen som blir for mørk og bitter — og til slutt at krummen mister for mye vann. Ved 220–230 °C uten lokk ligger 10–15 min godt innenfor begge.</p>
+        </div>
+      </section>
+
+      <!-- ============ BAKESVINN ============ -->
+      <section id="bakesvinn">
+        <div class="sec-head">
+          <div class="sec-num">06</div>
+          <h2>Bakesvinn — den ene målingen som betyr noe</h2>
+        </div>
+
+        <div class="prose">
+          <p>Termometeret måler en variabel som har låst seg. Vekttapet måler det du faktisk er ute etter: hvor mye vann som har forlatt brødet. Vei deigen inn, vei brødet ut. Målsonen er <strong>12–16 %</strong> — sikt på 13–15 % mens du kalibrerer ovnen din.</p>
+        </div>
+
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Deigvekt inn</th><th>Målvekt ut</th><th>Understekt hvis over</th></tr></thead>
+            <tbody id="lossRows"></tbody>
+          </table>
+        </div>
+
+        <div class="prose">
+          <p>Raden som er merket er din nåværende oppskrift. Endrer du mengdene over, flytter den seg.</p>
+        </div>
+      </section>
+
+      <!-- ============ DEIGTEMPERATUR ============ -->
+      <section id="ddt">
+        <div class="sec-head">
+          <div class="sec-num">07</div>
+          <h2>Treffe 25–26 °C i deigen</h2>
+        </div>
+
+        <div class="formula"><span class="c">// fire faktorer når du baker med surdeig</span>
+Vanntemp = (ønsket deigtemp × 4) − (mel + rom + surdeig + friksjon)
+
+<span class="c">// Oslo-kjøkken, september</span>
+(25 × 4)                                  = 100
+mel 21 + rom 21 + surdeig 22 + friksjon 2 =  66
+                                            ────
+<span class="h">Vanntemp                                  =  34 °C</span></div>
+
+        <div class="prose">
+          <p>Friksjonsfaktor: <span class="num">~2 °C</span> for hånd, <span class="num">5–8 °C</span> i kjøkkenmaskin. Mål deigen rett etter miksing for å verifisere. Bommer du <span class="num">2 °C</span> for lavt, legg på <span class="num">20–30 %</span> på bulk-tiden.</p>
+        </div>
+      </section>
+
+      <!-- ============ KRUMME ============ -->
+      <section id="krumme">
+        <div class="sec-head">
+          <div class="sec-num">08</div>
+          <h2>Les krummen</h2>
+        </div>
+
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Det du ser</th><th>Årsak</th><th>Fiks</th></tr></thead>
+            <tbody>
+              <tr class="is-you">
+                <td class="k">Grei porestruktur, men kliner på kniven og komprimeres under tommelen</td>
+                <td><span class="verdict hot">Understekt / skåret for varmt</span></td>
+                <td>+10–15 min uten lokk. Kjøl 3,5 t.</td>
+              </tr>
+              <tr>
+                <td class="k">Kompakt bånd nederst, stort hulrom rett under toppskorpen</td>
+                <td><span class="verdict cold">Undergjæret</span></td>
+                <td>Høyere deigtemp, eller lengre bulk.</td>
+              </tr>
+              <tr>
+                <td class="k">Flatt brød, jevnt fine småporer, skarpt surt</td>
+                <td><span class="verdict hot">Overgjæret</span></td>
+                <td>Kortere bulk, eller lavere deigtemp.</td>
+              </tr>
+              <tr>
+                <td class="k">Fuktig krumme også etter lengre steking og full nedkjøling</td>
+                <td><span class="verdict hot">Hydrering over melets evne</span></td>
+                <td>Ned til anbefalt hydrering, eller sterkere mel.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="prose">
+          <p><strong>Om melet:</strong> Regal og Møllerens siktet hvetemel ligger på ~10–11,5 % protein. Det holder ikke 78–80 % hydrering — glutennettverket klarer ikke binde vannet, og det slippes ut i stekingen. Over ~72–73 % trenger du sterkt mel (manitoba, «sterk hvete», tipo 0). Mye sammalt trekker samme vei: høyere amylaseaktivitet bryter ned stivelse og gir klissete krumme, og kliet kutter glutentrådene mekanisk.</p>
+        </div>
+      </section>
+
+      <!-- ============ REGLER ============ -->
+      <section id="regler">
+        <div class="sec-head">
+          <div class="sec-num">09</div>
+          <h2>Reglene</h2>
+        </div>
+
+        <div class="rules">
+          <div class="rule"><div class="rule-n">01</div><div class="rule-t">Skjær aldri varmt</div><div class="rule-d">3–4 timer på rist. Under 25 °C i midten.</div></div>
+          <div class="rule"><div class="rule-n">02</div><div class="rule-t">98 °C er nedre grense</div><div class="rule-d">Ikke et stoppsignal. Gi det 10–15 min til.</div></div>
+          <div class="rule"><div class="rule-n">03</div><div class="rule-t">Vei brødet</div><div class="rule-d">12–16 % bakesvinn er fasiten, ikke klokka.</div></div>
+          <div class="rule"><div class="rule-n">04</div><div class="rule-t">Rett fra kjøleskapet</div><div class="rule-d">Aldri temperer deigen før steking.</div></div>
+          <div class="rule"><div class="rule-n">05</div><div class="rule-t">Mål deigtemperatur</div><div class="rule-d">Ved miksing. Juster med vanntemperaturen.</div></div>
+          <div class="rule"><div class="rule-n">06</div><div class="rule-t">Bruk levainen på toppen</div><div class="rule-d">Doblet og kuppelformet. Ikke etter at den har falt.</div></div>
+          <div class="rule"><div class="rule-n">07</div><div class="rule-t">Rist, ikke benk</div><div class="rule-d">Ut av gryta straks, ellers damper bunnen.</div></div>
+          <div class="rule"><div class="rule-n">08</div><div class="rule-t">Styr skorpen på farge</div><div class="rule-d">Dyp mahogni. Mørk alt? Ned til 200–210 °C, lengre.</div></div>
+          <div class="rule"><div class="rule-n">09</div><div class="rule-t">Dør på gløtt til slutt</div><div class="rule-d">Siste 5–10 min. Lufter damp, tørker skorpen.</div></div>
+          <div class="rule"><div class="rule-n">10</div><div class="rule-t">Match hydrering til melet</div><div class="rule-d">Kalkulatoren over gir taket for blandingen din.</div></div>
+        </div>
+      </section>
+
+      <!-- ============ NESTE ============ -->
+      <section id="neste">
+        <div class="sec-head">
+          <div class="sec-num">10</div>
+          <h2>Neste bak — tre endringer</h2>
+        </div>
+
+        <div class="next">
+          <div class="next-item">
+            <div class="next-n">1</div>
+            <div class="next-t">Kjøl i 3,5 timer, skjær romtemperert</div>
+            <div class="next-d">Alene den største effekten. Rist, åpen luft, ikke tildekket.</div>
+          </div>
+          <div class="next-item">
+            <div class="next-n">2</div>
+            <div class="next-t">+12–15 min uten lokk etter 98 °C</div>
+            <div class="next-d">Vei deigen inn og brødet ut. Sikt på 13–15 % bakesvinn.</div>
+          </div>
+          <div class="next-item">
+            <div class="next-n">3</div>
+            <div class="next-t">Mål deigtemperatur ved miksing</div>
+            <div class="next-d">Sikt på 25–26 °C. Juster vanntemperaturen for å treffe.</div>
+          </div>
+        </div>
+      </section>
+
+      <footer>
+        Endre én ting av gangen mellom bak, og noter deigtemperatur, bakesvinn og skjæretemperatur hver gang. To bak med notater slår ti uten.
+      </footer>
+
+    </div>
+  </body>
+</html>
